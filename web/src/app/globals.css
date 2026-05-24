@@ -1,0 +1,44 @@
+/* ─────────────────────────────────────────────────────────────
+   SiteAnalyser theme — keyed to the Web Design by Ryan brand.
+   Brand cyan #06b6d4 (logo), Inter type (loaded via next/font in
+   layout.tsx), slate text, white cards on light slate background.
+   Goes in src/app/globals.css.
+
+   NOTE: No font @import here — Inter is loaded with next/font in
+   layout.tsx and exposed as --font-inter, which --font-sans points at.
+   Keep any shadcn :root / .dark variable blocks your scaffold added;
+   paste this alongside them, below the @import "tailwindcss" line.
+   ───────────────────────────────────────────────────────────── */
+
+@import "tailwindcss";
+
+@theme {
+  /* Brand cyan scale — 500 is the logo's exact #06b6d4. */
+  --color-brand-50:  #ecfeff;
+  --color-brand-100: #cffafe;
+  --color-brand-200: #a5f3fc;
+  --color-brand-300: #67e8f9;
+  --color-brand-400: #22d3ee;
+  --color-brand-500: #06b6d4;
+  --color-brand-600: #0891b2;
+  --color-brand-700: #0e7490;
+  --color-brand-800: #155e75;
+  --color-brand-900: #164e63;
+
+  /* Inter (from next/font) as the default sans, matching the wordmark. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: #f8fafc;   /* slate-50 */
+  color: #1e293b;              /* slate-800, same as the logo text */
+  font-family: var(--font-sans);
+}
+
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}

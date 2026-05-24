@@ -1,36 +1,152 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SiteAnalyser
 
-## Getting Started
+A full-stack website audit tool. Paste a URL, get real Google Lighthouse scores
+(performance, accessibility, best practices, SEO) plus Core Web Vitals, and a
+plain-English summary of what to fix — streamed live from an AI model.
 
-First, run the development server:
+Built as a **React + ASP.NET Core** application: a Next.js front end talking to a
+C# REST API that integrates the Google PageSpeed Insights and OpenAI APIs, with
+audit history persisted to Postgres via Entity Framework Core.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+> **Status:** Core audit and AI-summary pipeline complete and working end to end.
+> Historical tracking (EF Core + Postgres) and deployment in progress.
+
+---
+
+## Architecture
+
+```
+┌──────────────────┐      JSON over HTTP      ┌────────────────────────────┐
+│  React frontend  │ ───────────────────────▶ │   ASP.NET Core Web API     │
+│  (Next.js, TS)   │ ◀─────────────────────── │   (C# / .NET 10)           │
+│  localhost:3000  │                          │   localhost:5188           │
+└──────────────────┘                          │                            │
+                                              │  Controllers               │
+                                              │   • AuditController         │
+                                              │   • SummaryController       │
+                                              │  Services (DI)              │
+                                              │   • PageSpeedService        │
+                                              │   • OpenAiService           │
+                                              └──────┬──────────────┬───────┘
+                                                     │              │
+                                          ┌──────────▼───┐   ┌──────▼───────┐
+                                          │ Google       │   │ OpenAI       │
+                                          │ PageSpeed    │   │ (streaming)  │
+                                          └──────────────┘   └──────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The front end and API are two independent processes that share nothing but a
+JSON-over-HTTP contract — they can be developed, deployed, and scaled separately.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech stack
 
-## Learn More
+**Frontend** — React 19, Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui (Base UI)
+**Backend** — C# / .NET 10, ASP.NET Core Web API, dependency-injected services
+**Integrations** — Google PageSpeed Insights API, OpenAI API (streaming chat completions)
+**Persistence** *(in progress)* — Entity Framework Core 10, PostgreSQL (Supabase)
+**Tooling** — npm, NuGet, dotnet user-secrets for local configuration
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How it works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. The user submits a URL in the React UI. The frontend POSTs it to the .NET API
+   at `/api/audit`.
+2. `AuditController` validates the URL and delegates to `PageSpeedService`, which
+   calls Google PageSpeed Insights via `HttpClient`, then shapes the large raw
+   response down to just the scores and Core Web Vitals the UI needs.
+3. The clean result is returned as JSON and rendered as score cards and a vitals row.
+4. Once results render, the frontend makes a second request to `/api/summary`.
+   `SummaryController` hands the scores and vitals to `OpenAiService` and streams
+   the model's response back token by token, writing directly to the response body
+   and flushing per token so the summary types into the UI live.
 
-## Deploy on Vercel
+A deliberate design choice: all the data-shaping and third-party integration lives
+in the API layer, so the frontend receives clean, typed data rather than raw
+third-party responses.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Running locally
+
+You'll need: Node 20+, the .NET 10 SDK, a Google PageSpeed API key, and an OpenAI
+API key (with prepaid credit).
+
+### Backend (`api/`)
+
+```bash
+cd api
+dotnet user-secrets set "PageSpeed:ApiKey" "YOUR_PAGESPEED_KEY"
+dotnet user-secrets set "OpenAi:ApiKey" "YOUR_OPENAI_KEY"
+dotnet run
+```
+
+The API starts on `http://localhost:5188` (check the console output for the exact
+port). Visit the OpenAPI page printed on startup to see the available endpoints.
+
+### Frontend (`web/`)
+
+```bash
+cd web
+# .env.local — point the frontend at the API:
+#   NEXT_PUBLIC_API_URL=http://localhost:5188
+npm install
+npm run dev
+```
+
+The app runs on `http://localhost:3000`. Paste a URL and run an audit.
+
+> Run both in separate terminals. CORS is configured on the API to allow the
+> frontend origin.
+
+---
+
+## API endpoints
+
+| Method | Route          | Purpose                                              |
+|--------|----------------|------------------------------------------------------|
+| POST   | `/api/audit`   | Run a Lighthouse audit for a URL; returns scores + vitals |
+| POST   | `/api/summary` | Stream a plain-English AI summary of an audit result |
+| GET    | `/api/history` | *(in progress)* Return prior audits for a URL        |
+
+---
+
+## Project structure
+
+```
+siteanalyser/
+├── web/                  # React / Next.js frontend
+│   └── src/
+│       ├── app/page.tsx
+│       └── components/
+│           ├── AuditResults.tsx
+│           └── CoreWebVitals.tsx
+└── api/                  # ASP.NET Core backend
+    ├── Controllers/
+    │   ├── AuditController.cs
+    │   └── SummaryController.cs
+    ├── Services/
+    │   ├── PageSpeedService.cs
+    │   └── OpenAiService.cs
+    ├── Models/
+    └── Program.cs
+```
+
+---
+
+## Roadmap
+
+- [ ] Persist each audit to Postgres (EF Core)
+- [ ] `/api/history` endpoint + trend chart of scores over time
+- [ ] Playwright end-to-end and API tests
+- [ ] Deploy (API to Azure App Service, frontend to Netlify)
+
+---
+
+## Notes
+
+This started life as a Next.js-only app and was re-architected to put the entire
+backend in C# / ASP.NET Core — a deliberate move to build the project around a
+React-frontend / .NET-API architecture. Write-up of the build is in the blog post.

@@ -1,0 +1,6 @@
+@SiteAnalyser.Api_HostAddress = http://localhost:5188
+
+GET {{SiteAnalyser.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
