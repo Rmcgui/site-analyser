@@ -13,7 +13,7 @@ builder.Services.AddHttpClient<IPageSpeedService, PageSpeedService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("http://localhost:3000") // react dev server
+        policy.WithOrigins("http://localhost:3000", "https://audit.webdesignbyryan.com") // react dev server
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
