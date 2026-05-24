@@ -1,5 +1,7 @@
 # Site Analyser
 
+![Playwright Tests](https://github.com/Rmcgui/siteanalyser/actions/workflows/playwright.yml/badge.svg)
+
 A full-stack website audit tool. Paste a URL, get real Google Lighthouse scores
 (performance, accessibility, best practices, SEO) plus Core Web Vitals, and a
 plain-English summary of what to fix that is streamed live from an AI model. Audit history
