@@ -32,7 +32,7 @@ jobs:
         env:
           BASE_URL: https://audit.webdesignbyryan.com
           API_URL: https://siteanalyser-api-gjcef3cjdpgqbjh6.australiaeast-01.azurewebsites.net
-        run: npx playwright test --project=chromium
+        run: npm run test:ci
 
       - uses: actions/upload-artifact@v4.6.2
         if: always()
