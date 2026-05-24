@@ -64,4 +64,3 @@ jobs:
         with:
           app-name: 'siteanalyser-api'
           slot-name: 'Production'
-          package: .

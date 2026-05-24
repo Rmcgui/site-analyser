@@ -51,7 +51,7 @@ export default function HomePage() {
       <div className="flex gap-2 mb-8">
         <Input
           type="url"
-          placeholder="https://example.com"
+          placeholder="enter a url like 'https://www.example.com'"
           value={url}
           onChange={(e: { target: { value: string } }) => setUrl(e.target.value)}
           onKeyDown={(e: { key: string }) => {
